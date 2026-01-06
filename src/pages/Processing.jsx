@@ -1,25 +1,17 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Processing() {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const file = location.state?.file;
 
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
-        if (!file) {
-          alert("No file found. Please upload a document again.");
-          navigate("/upload");
-          return;
-        }
+        console.log("Sending TEXT to backend...");
 
-        // ✅ TEMP MVP: Convert file name to text placeholder
-        // (Backend currently expects TEXT, not file)
+        // 🟢 MVP TEXT (until backend supports file upload)
         const textPayload = {
-          text: `Analyze this legal document: ${file.name}`
+          text: "Employee must pay 2 lakh if they resign early"
         };
 
         const response = await fetch(
@@ -34,26 +26,34 @@ export default function Processing() {
         );
 
         if (!response.ok) {
-          throw new Error("Backend request failed");
+          throw new Error("Backend error");
         }
 
         const backendData = await response.json();
+        console.log("Backend response:", backendData);
+
+        // Normalize backend response for Result page
+        const analysisData = {
+          risk_level: backendData.risk_level || "Medium",
+          summary: backendData.summary || "No summary available",
+          flags: []
+        };
 
         sessionStorage.setItem(
           "analysis",
-          JSON.stringify(backendData)
+          JSON.stringify(analysisData)
         );
 
         navigate("/result");
       } catch (error) {
-        console.error(error);
+        console.error("FETCH ERROR:", error);
         alert("Failed to connect to backend. Please try again.");
         navigate("/upload");
       }
     };
 
     analyzeDocument();
-  }, [file, navigate]);
+  }, [navigate]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
