@@ -16,17 +16,14 @@ export default function Processing() {
           return;
         }
 
-        // 🔹 Read file as text (MVP-safe)
-        const text = await file.text();
+        const formData = new FormData();
+        formData.append("file", file);
 
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/analyze",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ text })
+            body: formData // ❗ DO NOT set Content-Type
           }
         );
 
@@ -43,8 +40,8 @@ export default function Processing() {
 
         navigate("/result");
       } catch (error) {
-        console.error(error);
-        alert("Failed to connect to backend");
+        console.error("Processing error:", error);
+        alert("Failed to connect to backend.");
         navigate("/upload");
       }
     };
@@ -59,4 +56,3 @@ export default function Processing() {
     </div>
   );
 }
-
