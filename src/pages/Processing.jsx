@@ -1,15 +1,23 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Processing() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const file = location.state?.file;
 
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
-        // 🔹 TEMP MVP TEXT (backend expects JSON)
-        const sampleText =
-          "Employee must work for three years or pay a penalty of 2 lakh rupees.";
+        if (!file) {
+          alert("No document found. Please upload again.");
+          navigate("/upload");
+          return;
+        }
+
+        // 🔹 Read file as text (MVP-safe)
+        const text = await file.text();
 
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/analyze",
@@ -18,9 +26,7 @@ export default function Processing() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              text: sampleText
-            })
+            body: JSON.stringify({ text })
           }
         );
 
@@ -28,18 +34,23 @@ export default function Processing() {
           throw new Error("Backend error");
         }
 
-        const data = await response.json();
+        const backendData = await response.json();
 
-        sessionStorage.setItem("analysis", JSON.stringify(data));
+        sessionStorage.setItem(
+          "analysis",
+          JSON.stringify(backendData)
+        );
+
         navigate("/result");
-      } catch (err) {
+      } catch (error) {
+        console.error(error);
         alert("Failed to connect to backend");
-        console.error(err);
+        navigate("/upload");
       }
     };
 
     analyzeDocument();
-  }, [navigate]);
+  }, [file, navigate]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
