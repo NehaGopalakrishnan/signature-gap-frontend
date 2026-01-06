@@ -7,12 +7,9 @@ export default function Processing() {
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
-        console.log("Sending TEXT to backend...");
-
-        // 🟢 MVP TEXT (until backend supports file upload)
-        const textPayload = {
-          text: "Employee must pay 2 lakh if they resign early"
-        };
+        // 🔹 TEMP MVP TEXT (backend expects JSON)
+        const sampleText =
+          "Employee must work for three years or pay a penalty of 2 lakh rupees.";
 
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/analyze",
@@ -21,7 +18,9 @@ export default function Processing() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(textPayload)
+            body: JSON.stringify({
+              text: sampleText
+            })
           }
         );
 
@@ -29,26 +28,13 @@ export default function Processing() {
           throw new Error("Backend error");
         }
 
-        const backendData = await response.json();
-        console.log("Backend response:", backendData);
+        const data = await response.json();
 
-        // Normalize backend response for Result page
-        const analysisData = {
-          risk_level: backendData.risk_level || "Medium",
-          summary: backendData.summary || "No summary available",
-          flags: []
-        };
-
-        sessionStorage.setItem(
-          "analysis",
-          JSON.stringify(analysisData)
-        );
-
+        sessionStorage.setItem("analysis", JSON.stringify(data));
         navigate("/result");
-      } catch (error) {
-        console.error("FETCH ERROR:", error);
-        alert("Failed to connect to backend. Please try again.");
-        navigate("/upload");
+      } catch (err) {
+        alert("Failed to connect to backend");
+        console.error(err);
       }
     };
 
@@ -59,9 +45,6 @@ export default function Processing() {
     <div style={{ textAlign: "center", marginTop: "100px" }}>
       <h2>🔍 Analyzing Document</h2>
       <p>AI is scanning your document for legal risks…</p>
-      <p style={{ fontSize: "13px", color: "gray" }}>
-        This usually takes a few seconds
-      </p>
     </div>
   );
 }
