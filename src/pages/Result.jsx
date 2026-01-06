@@ -44,7 +44,7 @@ export default function Result() {
     try {
       setIsTranslating(true);
 
-      const res = await fetch("https://dori-caespitose-semasiologically.ngrok-free.dev/translate", {
+      const res = await fetch("https://legal-backend-fah0.onrender.com/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -197,3 +197,4 @@ For legal literacy only. Not legal advice.
     </div>
   );
 }
+
