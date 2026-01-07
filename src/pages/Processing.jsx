@@ -5,8 +5,9 @@ export default function Processing() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function analyzeDocument() {
+    const analyzeDocument = async () => {
       try {
+        // ✅ Get pasted contract text
         const text = sessionStorage.getItem("extractedText");
 
         if (!text || text.trim().length < 50) {
@@ -16,7 +17,7 @@ export default function Processing() {
         }
 
         const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/api/analyze",
+          "https://legal-backend-fah0.onrender.com/analyze",
           {
             method: "POST",
             headers: {
@@ -31,28 +32,28 @@ export default function Processing() {
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Backend error:", errorText);
+          const err = await response.text();
+          console.error("Backend error:", err);
           alert("Backend rejected the request.");
           navigate("/upload");
           return;
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
-        // ✅ defensive storage (no undefined access)
+        // ✅ Store only analysis object
         sessionStorage.setItem(
           "analysis",
-          JSON.stringify(data.analysis || {})
+          JSON.stringify(result.analysis)
         );
 
         navigate("/result");
-      } catch (err) {
-        console.error("Processing error:", err);
+      } catch (error) {
+        console.error("Network error:", error);
         alert("Failed to connect to backend.");
         navigate("/upload");
       }
-    }
+    };
 
     analyzeDocument();
   }, [navigate]);
@@ -64,4 +65,3 @@ export default function Processing() {
     </div>
   );
 }
-
