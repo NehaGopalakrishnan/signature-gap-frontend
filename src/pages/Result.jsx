@@ -65,7 +65,7 @@ export default function Result() {
       setIsTranslating(true);
 
       const res = await fetch(
-        "https://legal-backend-fah0.onrender.com/api/translate",
+        "https://legal-backend-fah0.onrender.com/translate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -316,4 +316,5 @@ For legal literacy only. Not legal advice.
     </div>
   );
 }
+
 
