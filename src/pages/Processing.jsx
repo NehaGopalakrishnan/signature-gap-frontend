@@ -16,7 +16,7 @@ export default function Processing() {
           return;
         }
 
-        // ✅ Call backend EXACTLY as specified
+        // ✅ Call backend (FINAL correct endpoint)
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/api/analyze",
           {
@@ -32,20 +32,26 @@ export default function Processing() {
           }
         );
 
+        // 🔴 Log backend errors properly
         if (!response.ok) {
-          const errText = await response.text();
-          console.error("Backend error:", errText);
-          throw new Error("Backend error");
+          const errorText = await response.text();
+          console.error("Backend error:", errorText);
+          alert("Backend rejected the request. Check console.");
+          navigate("/upload");
+          return;
         }
 
         const result = await response.json();
 
-        // ✅ Store backend response for Result page
-        sessionStorage.setItem("analysis", JSON.stringify(result));
+        // ✅ STORE ONLY analysis (THIS IS THE KEY FIX)
+        sessionStorage.setItem(
+          "analysis",
+          JSON.stringify(result.analysis)
+        );
 
         navigate("/result");
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error("Network / CORS error:", error);
         alert("Failed to connect to backend");
         navigate("/upload");
       }
