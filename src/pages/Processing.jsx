@@ -5,7 +5,7 @@ export default function Processing() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const analyzeDocument = async () => {
+    async function analyzeDocument() {
       try {
         const text = sessionStorage.getItem("extractedText");
 
@@ -15,41 +15,44 @@ export default function Processing() {
           return;
         }
 
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            text: text,
-            contract_name: "Contract",
-            user_role: "general"
-          })
+        const response = await fetch(
+          "https://legal-backend-fah0.onrender.com/api/analyze",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              text: text,
+              contract_name: "Contract",
+              user_role: "general"
+            })
+          }
         );
 
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Backend error:", errorText);
-          alert("Backend rejected the request");
+          alert("Backend rejected the request.");
           navigate("/upload");
           return;
         }
 
-        const result = await response.json();
+        const data = await response.json();
 
-        // Store ONLY what Result page expects
+        // ✅ defensive storage (no undefined access)
         sessionStorage.setItem(
           "analysis",
-          JSON.stringify(result.analysis)
+          JSON.stringify(data.analysis || {})
         );
 
         navigate("/result");
       } catch (err) {
-        console.error("Network error:", err);
-        alert("Failed to connect to backend");
+        console.error("Processing error:", err);
+        alert("Failed to connect to backend.");
         navigate("/upload");
       }
-    };
+    }
 
     analyzeDocument();
   }, [navigate]);
