@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import { ui } from "../styles/ui";
@@ -11,31 +11,51 @@ export default function Result() {
 
   const navigate = useNavigate();
 
-  const data =
-    JSON.parse(sessionStorage.getItem("analysis")) || {
+  // ✅ Parse sessionStorage safely with useMemo
+  const data = useMemo(() => {
+    try {
+      const stored = sessionStorage.getItem("analysis");
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (err) {
+      console.error("Failed to parse analysis data:", err);
+    }
+    return {
       risk_level: "Unknown",
       summary: "No analysis available.",
       flags: [],
       user_warnings: []
     };
+  }, []);
 
-  // Risk color
-  const riskColor = (level) => {
-    if (level === "High") return "#dc2626";
-    if (level === "Medium") return "#f59e0b";
-    return "#16a34a";
-  };
+  // ✅ Risk color helper
+  const riskColor = useCallback((level) => {
+    switch (level) {
+      case "High":
+        return "#dc2626";
+      case "Medium":
+        return "#f59e0b";
+      default:
+        return "#16a34a";
+    }
+  }, []);
 
-  // Fallback warnings
-  const warnings =
-    data.user_warnings && data.user_warnings.length > 0
-      ? data.user_warnings
-      : data.flags?.slice(0, 3).map(
-          (f) => f.explanation || "Please review this clause carefully"
-        );
+  // ✅ Fallback warnings with safe access
+  const warnings = useMemo(() => {
+    if (data.user_warnings && data.user_warnings.length > 0) {
+      return data.user_warnings;
+    }
+    if (data.flags && data.flags.length > 0) {
+      return data.flags.slice(0, 3).map(
+        (f) => f?.explanation || "Please review this clause carefully"
+      );
+    }
+    return ["Please review the document carefully before signing."];
+  }, [data.user_warnings, data.flags]);
 
-  // 🔁 Sarvam Translation (FIXED ENDPOINT)
-  const fetchSarvamTranslation = async (lang) => {
+  // ✅ Translation function
+  const fetchSarvamTranslation = useCallback(async (lang) => {
     if (lang === "en") {
       setTranslatedText("");
       return;
@@ -56,40 +76,67 @@ export default function Result() {
         }
       );
 
-      if (!res.ok) throw new Error("Translation failed");
+      if (!res.ok) {
+        throw new Error(`Translation failed: ${res.status}`);
+      }
 
       const result = await res.json();
-      setTranslatedText(result.translated_text);
+      setTranslatedText(result.translated_text || "");
     } catch (err) {
-      alert("Translation failed");
+      console.error("Translation error:", err);
+      alert("Translation failed. Please try again.");
+      setLanguage("en"); // Reset to English on failure
     } finally {
       setIsTranslating(false);
     }
-  };
+  }, [data.summary]);
 
-  const finalText =
-    language === "en" || !translatedText
+  // ✅ Final display text
+  const finalText = useMemo(() => {
+    return language === "en" || !translatedText
       ? data.summary
       : translatedText;
+  }, [language, translatedText, data.summary]);
 
-  // 🔊 Audio (browser TTS)
-  const playAudio = () => {
+  // ✅ Audio playback with cleanup
+  const playAudio = useCallback(() => {
     if (!finalText) return;
 
     const utterance = new SpeechSynthesisUtterance(finalText);
-    utterance.lang =
-      language === "ta" ? "ta-IN" :
-      language === "hi" ? "hi-IN" :
-      "en-US";
+    
+    const langMap = {
+      ta: "ta-IN",
+      hi: "hi-IN",
+      en: "en-US"
+    };
+    utterance.lang = langMap[language] || "en-US";
 
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  };
+  }, [finalText, language]);
 
-  // 📄 Download
-  const downloadSummary = () => {
-    const content = `
-DOCUMENT RISK SUMMARY
+  // ✅ Cleanup speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // ✅ Close modal on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && showModal) {
+        setShowModal(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showModal]);
+
+  // ✅ Download summary
+  const downloadSummary = useCallback(() => {
+    const content = `DOCUMENT RISK SUMMARY
 =====================
 
 Overall Risk Level: ${data.risk_level}
@@ -108,7 +155,14 @@ For legal literacy only. Not legal advice.
     a.download = "document_summary.txt";
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [data.risk_level, finalText]);
+
+  // ✅ Handle language change
+  const handleLanguageChange = useCallback((e) => {
+    const lang = e.target.value;
+    setLanguage(lang);
+    fetchSarvamTranslation(lang);
+  }, [fetchSarvamTranslation]);
 
   return (
     <div style={ui.page}>
@@ -118,13 +172,18 @@ For legal literacy only. Not legal advice.
 
           <p style={{ ...ui.text, marginBottom: "12px" }}>
             <strong>Overall Risk:</strong>{" "}
-            <span style={{ fontWeight: 600, color: riskColor(data.risk_level) }}>
+            <span
+              style={{
+                fontWeight: 600,
+                color: riskColor(data.risk_level)
+              }}
+            >
               {data.risk_level}
             </span>
           </p>
 
           {isTranslating ? (
-            <p style={ui.mutedText}>Translating using Sarvam AI…</p>
+            <p style={ui.mutedText}>Translating…</p>
           ) : (
             <p style={ui.text}>{finalText}</p>
           )}
@@ -141,6 +200,7 @@ For legal literacy only. Not legal advice.
             <button
               style={ui.primaryButton}
               onClick={() => setShowModal(true)}
+              aria-haspopup="dialog"
             >
               Proceed to Sign
             </button>
@@ -160,23 +220,25 @@ For legal literacy only. Not legal advice.
             </button>
           </div>
 
-          {/* AUDIO */}
+          {/* AUDIO & LANGUAGE */}
           <div
             style={{
               marginTop: "24px",
               display: "flex",
               alignItems: "center",
-              gap: "10px"
+              gap: "10px",
+              flexWrap: "wrap"
             }}
           >
+            <label htmlFor="language-select" style={{ display: "none" }}>
+              Select Language
+            </label>
             <select
+              id="language-select"
               value={language}
-              onChange={(e) => {
-                const lang = e.target.value;
-                setLanguage(lang);
-                fetchSarvamTranslation(lang);
-              }}
+              onChange={handleLanguageChange}
               style={ui.select}
+              disabled={isTranslating}
             >
               <option value="en">English</option>
               <option value="ta">Tamil</option>
@@ -186,8 +248,10 @@ For legal literacy only. Not legal advice.
             <button
               style={ui.dangerButton}
               onClick={playAudio}
+              disabled={isTranslating}
+              aria-label="Play audio"
             >
-              🔊 Play Translated Audio
+              🔊 Play Audio
             </button>
           </div>
 
@@ -200,20 +264,40 @@ For legal literacy only. Not legal advice.
       {/* MODAL */}
       {showModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.4)",
+            backgroundColor: "rgba(0, 0, 0, 0.4)",
             display: "flex",
             justifyContent: "center",
-            alignItems: "center"
+            alignItems: "center",
+            zIndex: 1000
+          }}
+          onClick={(e) => {
+            // Close modal when clicking backdrop
+            if (e.target === e.currentTarget) {
+              setShowModal(false);
+            }
           }}
         >
-          <div style={{ ...ui.card, maxWidth: "420px" }}>
-            <h3 style={ui.subHeading}>Before you sign</h3>
-            <ul style={ui.text}>
+          <div
+            style={{
+              ...ui.card,
+              maxWidth: "420px",
+              position: "relative"
+            }}
+          >
+            <h3 id="modal-title" style={ui.subHeading}>
+              Before you sign
+            </h3>
+            <ul style={{ ...ui.text, paddingLeft: "20px" }}>
               {warnings.map((w, i) => (
-                <li key={i}>{w}</li>
+                <li key={i} style={{ marginBottom: "8px" }}>
+                  {w}
+                </li>
               ))}
             </ul>
 
@@ -221,6 +305,7 @@ For legal literacy only. Not legal advice.
               <button
                 style={ui.primaryButton}
                 onClick={() => setShowModal(false)}
+                autoFocus
               >
                 Close
               </button>
@@ -231,4 +316,3 @@ For legal literacy only. Not legal advice.
     </div>
   );
 }
-
