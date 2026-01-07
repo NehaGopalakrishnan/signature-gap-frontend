@@ -1,25 +1,22 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import { ui } from "../styles/ui";
 
 export default function Mask() {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // ✅ Get file passed from Upload page
-  const file = location.state?.file;
+  // ✅ Get TEXT stored from Upload.jsx
+  const text = sessionStorage.getItem("extractedText");
 
   const handleConfirm = () => {
-    if (!file) {
-      alert("No file found. Please upload a document again.");
+    if (!text || text.trim().length < 50) {
+      alert("No document found. Please upload the contract again.");
       navigate("/upload");
       return;
     }
 
-    // ✅ Pass file forward to Processing
-    navigate("/processing", {
-      state: { file }
-    });
+    // ✅ Just move forward (Processing will read from sessionStorage)
+    navigate("/processing");
   };
 
   return (
