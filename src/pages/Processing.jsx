@@ -25,7 +25,7 @@ export default function Processing() {
 
         // ✅ FIXED: Correct API endpoint is /api/analyze
         const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/api/analyze",
+          "https://legal-backend-fah0.onrender.com/analyze",
           {
             method: "POST",
             headers: {
@@ -195,4 +195,5 @@ const styles = {
     margin: 0
   }
 };
+
 
