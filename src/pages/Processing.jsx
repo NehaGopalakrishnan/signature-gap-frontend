@@ -16,7 +16,7 @@ export default function Processing() {
         }
 
         const formData = new FormData();
-        formData.append("file", file); // 🔑 MUST be "file"
+        formData.append("file", file); // MUST be 'file'
 
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/api/upload",
@@ -28,14 +28,14 @@ export default function Processing() {
 
         if (!response.ok) {
           const err = await response.json();
-          alert(err.message || "Document analysis failed");
+          alert(err.message || "Analysis failed");
           navigate("/upload");
           return;
         }
 
         const backendData = await response.json();
 
-        // Save analysis for Result page
+        // backendData.analysis contains the result
         sessionStorage.setItem(
           "analysis",
           JSON.stringify(backendData.analysis)
