@@ -13,11 +13,10 @@ export default function Upload() {
       return;
     }
 
-    // ✅ Store text for next steps
-    sessionStorage.setItem("extractedText", text.trim());
+    // ✅ Store text for Processing
+    sessionStorage.setItem("extractedText", text);
 
-    // ✅ Go to Mask page (NO file passing)
-    navigate("/mask");
+    navigate("/processing");
   };
 
   return (
@@ -28,11 +27,11 @@ export default function Upload() {
 
           <p style={ui.text}>
             Paste the full contract text below.  
-            This MVP uses text input (PDF upload can be added later).
+            (PDF upload can be added later)
           </p>
 
           <textarea
-            rows={10}
+            rows="10"
             placeholder="Paste full contract text here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -41,9 +40,7 @@ export default function Upload() {
               padding: "12px",
               borderRadius: "8px",
               border: "1px solid #d1d5db",
-              marginTop: "12px",
-              fontFamily: "inherit",
-              fontSize: "14px"
+              marginTop: "12px"
             }}
           />
 
