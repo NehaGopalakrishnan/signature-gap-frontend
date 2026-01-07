@@ -7,7 +7,6 @@ export default function Processing() {
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
-        // ✅ Get text from sessionStorage
         const text = sessionStorage.getItem("extractedText");
 
         if (!text || text.trim().length < 50) {
@@ -16,42 +15,37 @@ export default function Processing() {
           return;
         }
 
-        // ✅ Call backend (FINAL correct endpoint)
-        const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/api/analyze",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              text: text,
-              contract_name: "Contract",
-              user_role: "general"
-            })
-          }
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            text: text,
+            contract_name: "Contract",
+            user_role: "general"
+          })
         );
 
-        // 🔴 Log backend errors properly
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Backend error:", errorText);
-          alert("Backend rejected the request. Check console.");
+          alert("Backend rejected the request");
           navigate("/upload");
           return;
         }
 
         const result = await response.json();
 
-        // ✅ STORE ONLY analysis (THIS IS THE KEY FIX)
+        // Store ONLY what Result page expects
         sessionStorage.setItem(
           "analysis",
           JSON.stringify(result.analysis)
         );
 
         navigate("/result");
-      } catch (error) {
-        console.error("Network / CORS error:", error);
+      } catch (err) {
+        console.error("Network error:", err);
         alert("Failed to connect to backend");
         navigate("/upload");
       }
