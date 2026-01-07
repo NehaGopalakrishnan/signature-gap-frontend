@@ -8,14 +8,15 @@ export default function Upload() {
   const [text, setText] = useState("");
 
   const handleContinue = () => {
-    if (!text || text.length < 50) {
+    if (!text || text.trim().length < 50) {
       alert("Please paste at least 50 characters of contract text.");
       return;
     }
 
-    // 🔑 Store TEXT for Processing.jsx
-    sessionStorage.setItem("extractedText", text);
+    // ✅ Store text for next steps
+    sessionStorage.setItem("extractedText", text.trim());
 
+    // ✅ Go to Mask page (NO file passing)
     navigate("/mask");
   };
 
@@ -26,12 +27,12 @@ export default function Upload() {
           <h2 style={ui.heading}>Upload Contract Text</h2>
 
           <p style={ui.text}>
-            Paste the contract text below.  
-            (PDF upload can be added later — this is the MVP-safe flow)
+            Paste the full contract text below.  
+            This MVP uses text input (PDF upload can be added later).
           </p>
 
           <textarea
-            rows="10"
+            rows={10}
             placeholder="Paste full contract text here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -40,7 +41,9 @@ export default function Upload() {
               padding: "12px",
               borderRadius: "8px",
               border: "1px solid #d1d5db",
-              marginTop: "12px"
+              marginTop: "12px",
+              fontFamily: "inherit",
+              fontSize: "14px"
             }}
           />
 
