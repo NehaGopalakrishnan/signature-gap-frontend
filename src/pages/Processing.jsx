@@ -7,14 +7,16 @@ export default function Processing() {
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
+        // ✅ Get text from sessionStorage
         const text = sessionStorage.getItem("extractedText");
 
-        if (!text) {
-          alert("No contract text found. Please upload again.");
+        if (!text || text.trim().length < 50) {
+          alert("No valid contract text found. Please upload again.");
           navigate("/upload");
           return;
         }
 
+        // ✅ Call backend EXACTLY as specified
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/api/analyze",
           {
@@ -23,23 +25,23 @@ export default function Processing() {
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              text,
-              contract_name: "Uploaded Contract",
-              user_role: "employee"
+              text: text,
+              contract_name: "Contract",
+              user_role: "general"
             })
           }
         );
 
         if (!response.ok) {
+          const errText = await response.text();
+          console.error("Backend error:", errText);
           throw new Error("Backend error");
         }
 
-        const backendData = await response.json();
+        const result = await response.json();
 
-        sessionStorage.setItem(
-          "analysis",
-          JSON.stringify(backendData)
-        );
+        // ✅ Store backend response for Result page
+        sessionStorage.setItem("analysis", JSON.stringify(result));
 
         navigate("/result");
       } catch (err) {
@@ -53,7 +55,7 @@ export default function Processing() {
   }, [navigate]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
+    <div style={{ textAlign: "center", marginTop: "120px" }}>
       <h2>🔍 Analyzing Document</h2>
       <p>AI is scanning your contract for legal risks…</p>
     </div>
