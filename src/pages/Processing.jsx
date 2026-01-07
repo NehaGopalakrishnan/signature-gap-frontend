@@ -15,32 +15,44 @@ export default function Processing() {
           return;
         }
 
-        // ✅ Read file as text (ONLY works for .txt / text-based PDFs)
+        // ❗ Restrict supported formats
+        const allowedTypes = ["text/plain", "application/pdf"];
+        if (!allowedTypes.includes(file.type)) {
+          alert("Please upload a TXT or text-based PDF file only.");
+          navigate("/upload");
+          return;
+        }
+
+        // ✅ Read file as text
         const text = await file.text();
+
+        if (!text || text.trim().length < 50) {
+          alert("Document text is too short or unreadable.");
+          navigate("/upload");
+          return;
+        }
 
         const response = await fetch(
           "https://legal-backend-fah0.onrender.com/analyze",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
           }
         );
 
         if (!response.ok) {
           const err = await response.text();
-          console.error("Backend error:", err);
-          throw new Error("Analysis failed");
+          console.error(err);
+          throw new Error("Backend error");
         }
 
         const data = await response.json();
         sessionStorage.setItem("analysis", JSON.stringify(data));
         navigate("/result");
 
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error(err);
         alert("Failed to connect to backend");
         navigate("/upload");
       }
