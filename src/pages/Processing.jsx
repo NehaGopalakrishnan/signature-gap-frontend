@@ -10,39 +10,37 @@ export default function Processing() {
     const analyzeDocument = async () => {
       try {
         if (!file) {
-          alert("No document found");
+          alert("No document found. Please upload again.");
           navigate("/upload");
           return;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
+        // ✅ Read file as text (ONLY works for .txt / text-based PDFs)
+        const text = await file.text();
 
         const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/api/upload-and-extract",
+          "https://legal-backend-fah0.onrender.com/analyze",
           {
             method: "POST",
-            body: formData
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text })
           }
         );
 
         if (!response.ok) {
           const err = await response.text();
-          console.error(err);
-          throw new Error("Backend error");
+          console.error("Backend error:", err);
+          throw new Error("Analysis failed");
         }
 
-        const backendData = await response.json();
-
-        sessionStorage.setItem(
-          "analysis",
-          JSON.stringify(backendData)
-        );
-
+        const data = await response.json();
+        sessionStorage.setItem("analysis", JSON.stringify(data));
         navigate("/result");
 
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
         alert("Failed to connect to backend");
         navigate("/upload");
       }
@@ -54,7 +52,7 @@ export default function Processing() {
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
       <h2>🔍 Analyzing Document</h2>
-      <p>AI is scanning your document…</p>
+      <p>AI is scanning your document for legal risks…</p>
     </div>
   );
 }
