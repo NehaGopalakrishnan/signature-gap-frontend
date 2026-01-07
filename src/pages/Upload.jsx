@@ -5,46 +5,76 @@ import { ui } from "../styles/ui";
 
 export default function Upload() {
   const navigate = useNavigate();
-  const [text, setText] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleContinue = () => {
-    if (!text || text.trim().length < 50) {
-      alert("Please paste at least 50 characters of contract text.");
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // File size check (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File too large. Please upload a file under 5MB.");
       return;
     }
 
-    // ✅ Store text for Processing
-    sessionStorage.setItem("extractedText", text);
+    setSelectedFile(file);
+  };
 
-    navigate("/processing");
+  const handleContinue = () => {
+    if (!selectedFile) {
+      alert("Please upload a document before continuing.");
+      return;
+    }
+
+    // ✅ Pass file via navigation state (safe, in-memory)
+    navigate("/mask", {
+      state: { file: selectedFile }
+    });
   };
 
   return (
     <div style={ui.page}>
       <Card>
         <div style={ui.card}>
-          <h2 style={ui.heading}>Upload Contract Text</h2>
+          <h2 style={ui.heading}>Upload Your Document</h2>
 
           <p style={ui.text}>
-            Paste the full contract text below.  
-            (PDF upload can be added later)
+            Upload a legal document such as a contract, agreement, or official notice.
+            Both scanned and digital documents are supported.
           </p>
 
-          <textarea
-            rows="10"
-            placeholder="Paste full contract text here..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+          {/* Upload Box */}
+          <div
             style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #d1d5db",
-              marginTop: "12px"
+              marginTop: "20px",
+              padding: "24px",
+              border: "2px dashed #c7d2fe",
+              borderRadius: "12px",
+              backgroundColor: "#f8fafc",
+              textAlign: "center"
             }}
-          />
+          >
+            <input
+              type="file"
+              accept=".pdf,image/*"
+              onChange={handleFileChange}
+              style={{ marginBottom: "12px" }}
+            />
 
-          <div style={{ marginTop: "24px" }}>
+            <p style={ui.mutedText}>
+              Supported formats: PDF, JPG, PNG (max 5MB)
+            </p>
+          </div>
+
+          {/* Selected File */}
+          {selectedFile && (
+            <p style={{ ...ui.text, marginTop: "16px", color: "#16a34a" }}>
+              Selected file: <strong>{selectedFile.name}</strong>
+            </p>
+          )}
+
+          {/* Continue */}
+          <div style={{ marginTop: "28px" }}>
             <button style={ui.primaryButton} onClick={handleContinue}>
               Continue
             </button>
