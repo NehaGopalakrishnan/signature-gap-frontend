@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 export default function Processing() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const file = location.state?.file;
 
   useEffect(() => {
@@ -17,31 +16,35 @@ export default function Processing() {
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", file); // 🔑 MUST be "file"
 
         const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/analyze",
+          "https://legal-backend-fah0.onrender.com/api/upload",
           {
             method: "POST",
-            body: formData // ❗ DO NOT set Content-Type
+            body: formData
           }
         );
 
         if (!response.ok) {
-          throw new Error("Backend error");
+          const err = await response.json();
+          alert(err.message || "Document analysis failed");
+          navigate("/upload");
+          return;
         }
 
         const backendData = await response.json();
 
+        // Save analysis for Result page
         sessionStorage.setItem(
           "analysis",
-          JSON.stringify(backendData)
+          JSON.stringify(backendData.analysis)
         );
 
         navigate("/result");
-      } catch (error) {
-        console.error("Processing error:", error);
-        alert("Failed to connect to backend.");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to connect to backend");
         navigate("/upload");
       }
     };
@@ -53,6 +56,9 @@ export default function Processing() {
     <div style={{ textAlign: "center", marginTop: "100px" }}>
       <h2>🔍 Analyzing Document</h2>
       <p>AI is scanning your document for legal risks…</p>
+      <p style={{ fontSize: "13px", color: "gray" }}>
+        This may take up to 60 seconds
+      </p>
     </div>
   );
 }
