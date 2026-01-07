@@ -34,7 +34,7 @@ export default function Result() {
           (f) => f.explanation || "Please review this clause carefully"
         );
 
-  // 🔁 Sarvam Translation
+  // 🔁 Sarvam Translation (FIXED ENDPOINT)
   const fetchSarvamTranslation = async (lang) => {
     if (lang === "en") {
       setTranslatedText("");
@@ -44,18 +44,23 @@ export default function Result() {
     try {
       setIsTranslating(true);
 
-      const res = await fetch("https://legal-backend-fah0.onrender.com/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: data.summary,
-          target_language: lang
-        })
-      });
+      const res = await fetch(
+        "https://legal-backend-fah0.onrender.com/api/translate",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: data.summary,
+            target_language: lang
+          })
+        }
+      );
+
+      if (!res.ok) throw new Error("Translation failed");
 
       const result = await res.json();
       setTranslatedText(result.translated_text);
-    } catch {
+    } catch (err) {
       alert("Translation failed");
     } finally {
       setIsTranslating(false);
@@ -67,7 +72,7 @@ export default function Result() {
       ? data.summary
       : translatedText;
 
-  // 🔊 Audio
+  // 🔊 Audio (browser TTS)
   const playAudio = () => {
     if (!finalText) return;
 
@@ -125,22 +130,45 @@ For legal literacy only. Not legal advice.
           )}
 
           {/* ACTIONS */}
-          <div style={{ marginTop: "24px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <button style={ui.primaryButton} onClick={() => setShowModal(true)}>
+          <div
+            style={{
+              marginTop: "24px",
+              display: "flex",
+              gap: "10px",
+              flexWrap: "wrap"
+            }}
+          >
+            <button
+              style={ui.primaryButton}
+              onClick={() => setShowModal(true)}
+            >
               Proceed to Sign
             </button>
 
-            <button style={ui.secondaryButton} onClick={downloadSummary}>
+            <button
+              style={ui.secondaryButton}
+              onClick={downloadSummary}
+            >
               Download Summary
             </button>
 
-            <button style={ui.secondaryButton} onClick={() => navigate("/compare")}>
+            <button
+              style={ui.secondaryButton}
+              onClick={() => navigate("/compare")}
+            >
               Compare Documents
             </button>
           </div>
 
           {/* AUDIO */}
-          <div style={{ marginTop: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <div
+            style={{
+              marginTop: "24px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px"
+            }}
+          >
             <select
               value={language}
               onChange={(e) => {
@@ -155,7 +183,10 @@ For legal literacy only. Not legal advice.
               <option value="hi">Hindi</option>
             </select>
 
-            <button style={ui.dangerButton} onClick={playAudio}>
+            <button
+              style={ui.dangerButton}
+              onClick={playAudio}
+            >
               🔊 Play Translated Audio
             </button>
           </div>
@@ -187,7 +218,10 @@ For legal literacy only. Not legal advice.
             </ul>
 
             <div style={{ marginTop: "16px", textAlign: "right" }}>
-              <button style={ui.primaryButton} onClick={() => setShowModal(false)}>
+              <button
+                style={ui.primaryButton}
+                onClick={() => setShowModal(false)}
+              >
                 Close
               </button>
             </div>
@@ -197,5 +231,3 @@ For legal literacy only. Not legal advice.
     </div>
   );
 }
-
-
