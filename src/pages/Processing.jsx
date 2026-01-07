@@ -1,68 +1,67 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Processing() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const file = location.state?.file;
 
   useEffect(() => {
     const analyzeDocument = async () => {
       try {
-        // ✅ Get pasted contract text
-        const text = sessionStorage.getItem("extractedText");
-
-        if (!text || text.trim().length < 50) {
-          alert("No valid contract text found. Please upload again.");
+        if (!file) {
+          alert("No file found. Please upload a document again.");
           navigate("/upload");
           return;
         }
 
+        // ✅ TEMP MVP: Convert file name to text placeholder
+        // (Backend currently expects TEXT, not file)
+        const textPayload = {
+          text: `Analyze this legal document: ${file.name}`
+        };
+
         const response = await fetch(
-          "https://legal-backend-fah0.onrender.com/analyze",
+          "https://legal-backend-fah0.onrender.com/api/analyze",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              text: text,
-              contract_name: "Contract",
-              user_role: "general"
-            })
+            body: JSON.stringify(textPayload)
           }
         );
 
         if (!response.ok) {
-          const err = await response.text();
-          console.error("Backend error:", err);
-          alert("Backend rejected the request.");
-          navigate("/upload");
-          return;
+          throw new Error("Backend request failed");
         }
 
-        const result = await response.json();
+        const backendData = await response.json();
 
-        // ✅ Store only analysis object
         sessionStorage.setItem(
           "analysis",
-          JSON.stringify(result.analysis)
+          JSON.stringify(backendData)
         );
 
         navigate("/result");
       } catch (error) {
-        console.error("Network error:", error);
-        alert("Failed to connect to backend.");
+        console.error(error);
+        alert("Failed to connect to backend. Please try again.");
         navigate("/upload");
       }
     };
 
     analyzeDocument();
-  }, [navigate]);
+  }, [file, navigate]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "120px" }}>
+    <div style={{ textAlign: "center", marginTop: "100px" }}>
       <h2>🔍 Analyzing Document</h2>
-      <p>AI is scanning your contract for legal risks…</p>
+      <p>AI is scanning your document for legal risks…</p>
+      <p style={{ fontSize: "13px", color: "gray" }}>
+        This usually takes a few seconds
+      </p>
     </div>
   );
 }
-
